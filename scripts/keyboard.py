@@ -4,7 +4,6 @@ import rospy
 from ackermann_msgs.msg import AckermannDriveStamped
 
 import sys, select, termios, tty
-
 pub = rospy.Publisher('drive', AckermannDriveStamped, queue_size=10)
 
 keyBindings = {
@@ -36,7 +35,7 @@ if __name__=="__main__":
   status = 0
 
   try:
-    while(1):
+    while(not rospy.is_shutdown()):
        key = getKey()
        if key in keyBindings.keys():
           x = keyBindings[key][0]
@@ -55,7 +54,7 @@ if __name__=="__main__":
     print 'error'
 
   finally:
-      msg = drive = AckermannDriveStamped()
+      msg = AckermannDriveStamped()
       msg.drive.steering_angle = 0
       msg.drive.speed = 0
       pub.publish(msg)
