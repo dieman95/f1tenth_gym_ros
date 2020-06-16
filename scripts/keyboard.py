@@ -4,7 +4,7 @@ import rospy
 from ackermann_msgs.msg import AckermannDriveStamped
 
 import sys, select, termios, tty
-pub = rospy.Publisher('drive', AckermannDriveStamped, queue_size=10)
+pub = rospy.Publisher('drive', AckermannDriveStamped, queue_size=100)
 
 keyBindings = {
   'w':(1,0),
