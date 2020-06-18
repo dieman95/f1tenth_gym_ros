@@ -80,10 +80,10 @@ class DisparityExtenderDriving(object):
 
         #publisher for speed and angles 
 
-        self.pub_drive_param = rospy.Publisher('drive',AckermannDriveStamped, queue_size=5)
+        self.pub_drive_param = rospy.Publisher('drive',AckermannDriveStamped, queue_size=100)
 
         #this functionality depends on a functioning LIDAR so it subscribes to the lidar scans
-        rospy.Subscriber('scan', LaserScan, self.lidar_callback)
+        rospy.Subscriber('scan', LaserScan, self.lidar_callback,queue_size=100)
 
         #create a variable that will store the lidar distances
         self.lidar_distances=None
