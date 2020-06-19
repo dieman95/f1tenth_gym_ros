@@ -23,7 +23,6 @@ class Safety(object):
         NOTE that the x component of the linear velocity in odom is the speed
         """
 
-        self.brake_publisher=rospy.Publisher('brake',AckermannDriveStamped,queue_size=100)
         self.brake_bool=rospy.Publisher('brake_bool',Bool,queue_size=100)
 
         # Initialize subscribers
@@ -46,8 +45,6 @@ class Safety(object):
         projections=np.cos(angles_radian)*linear_velocity
         projections=np.maximum(projections,0.00000001)
         
-
-
         # the velocity we get from odom is in the x direction  
         
         ranges = scan_msg.ranges
@@ -60,12 +57,10 @@ class Safety(object):
 
         
         if minimum_ttc < self.THRESHOLD:
-            print("BRAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKE")
-
-
-        # do the projection onto the distance vector
-
-
+            msg= Bool()
+            msg.data = True
+            rospy.loginfo("Engage AEB")
+            self.brake_bool.publish(msg,queue=10)
 
 
         self.speed = 0
