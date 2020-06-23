@@ -41,7 +41,7 @@ class DisparityExtenderDriving(object):
         # This is the radius to the left or right of the car that must be clear
         # when the car is attempting to turn left or right.
 
-        self.turn_clearance = 0.25
+        self.turn_clearance = 0.10
 
         # This is the maximum steering angle of the car, in degrees.
 
@@ -216,7 +216,7 @@ class DisparityExtenderDriving(object):
     def publish_speed_and_angle(self,angle,speed):
         msg = AckermannDriveStamped()
         msg.drive.steering_angle = angle
-        msg.drive.speed = 0.5 #right now I want constant speed
+        msg.drive.speed = 1.0 #right now I want constant speed
         self.pub_drive_param.publish(msg)
 
 
