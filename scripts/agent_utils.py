@@ -15,13 +15,10 @@ def get_rotation_matrix(theta):
 def nearest_point_on_line_segment(point, start, end):
     '''
     Return the nearest point along the line segment connecting start and end.
-
     >>> nearest_point_on_line_segment(np.array([0.0,0.0]), np.array([1.0,1.0]), np.array([1.0,-1.0]))
     (array([ 1.,  0.]), 0.5)
-
     >>> nearest_point_on_line_segment(np.array([0.0,0.0]), np.array([1.0,1.0]), np.array([1.0,2.0]))
     (array([ 1.,  1.]), 0.0)
-
     >>> nearest_point_on_line_segment(np.array([0.0,0.0]), np.array([1.0,-2.0]), np.array([1.0,-1.0]))
     (array([ 1., -1.]), 1.0)
     '''
@@ -38,12 +35,9 @@ def nearest_point_on_line_segment(point, start, end):
 def nearest_point_on_trajectory_py2(point, trajectory):
     '''
     Return the nearest point along the given piecewise linear trajectory.
-
     Same as nearest_point_on_line_segment, but vectorized. This method is quite fast, time constraints should
     not be an issue so long as trajectories are not insanely long.
-
         Order of magnitude: trajectory length: 1000 --> 0.0002 second computation (5000fps)
-
     point: size 2 numpy array
     trajectory: Nx2 matrix of (x,y) trajectory waypoints
         - these must be unique. If they are not unique, a divide by 0 error will destroy the world
@@ -71,9 +65,7 @@ def nearest_point_on_trajectory_py2(point, trajectory):
 @njit(fastmath=False, cache=True)
 def first_point_on_trajectory_intersecting_circle(point, radius, trajectory, t=0.0, wrap=False):
     ''' starts at beginning of trajectory, and find the first point one radius away from the given point along the trajectory.
-
     Assumes that the first segment passes within a single radius of the point
-
     http://codereview.stackexchange.com/questions/86421/line-segment-to-circle-collision-algorithm
     '''
     start_i = int(t)
