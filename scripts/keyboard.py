@@ -5,6 +5,7 @@ from ackermann_msgs.msg import AckermannDriveStamped
 
 import sys, select, termios, tty
 pub = rospy.Publisher('drive', AckermannDriveStamped, queue_size=100)
+pub2 = rospy.Publisher('opp_drive', AckermannDriveStamped, queue_size=100)
 
 keyBindings = {
   'w':(1,0),
@@ -48,7 +49,9 @@ if __name__=="__main__":
        msg = drive = AckermannDriveStamped()
        msg.drive.steering_angle = th*turn
        msg.drive.speed = x*speed
+       msg.header.stamp=rospy.Time.now()
        pub.publish(msg)
+       pub2.publish(msg)
 
   except:
     print 'error'

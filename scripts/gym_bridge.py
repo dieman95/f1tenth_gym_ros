@@ -121,7 +121,7 @@ class GymBridge(object):
 
         action = {'ego_idx': 0, 'speed': [ego_speed, opp_speed], 'steer': [self.ego_steer, self.opp_steer]}
         self.obs, step_reward, self.done, info = self.racecar_env.step(action)
-
+        #print("executed")
         self.update_sim_state()
 
     def timer_callback(self, timer):
