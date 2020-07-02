@@ -3,6 +3,7 @@ import rospy
 from ackermann_msgs.msg import AckermannDriveStamped
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point
+from f1tenth_gym_ros.msg import GoalPoint
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 import math
@@ -15,10 +16,12 @@ import rospkg
 
 class pure_pursuit:
 
-    def __init__(self,waypoint_file,drive_topic,odom_topic):
+    def __init__(self,waypoint_file,drive_topic,odom_topic,debug_visualization=False):
 
         # initialize class fields 
         self.waypoint_file = waypoint_file
+
+        self.debug_visualization = debug_visualization
 
         # pure pursuit parameters
         self.LOOKAHEAD_DISTANCE = 1.5#1.70 # meters
@@ -30,13 +33,19 @@ class pure_pursuit:
         self.read_waypoints()
        
         # Publisher for 'drive_parameters' (speed and steering angle)
-        self.pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=100)
+        self.pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=10)
+        
         # Publisher for the goal point
-        self.goal_pub = rospy.Publisher('/goal_point', MarkerArray, queue_size="1")
-        self.considered_pub= rospy.Publisher('/considered_points', MarkerArray, queue_size="1")
-        self.point_in_car_frame= rospy.Publisher('/goal_point_car_frame', MarkerArray, queue_size="1")
+        if(self.debug_visualization):
+            self.goal_pub = rospy.Publisher('/goal_point', MarkerArray, queue_size="1")
+            self.considered_pub= rospy.Publisher('/considered_points', MarkerArray, queue_size="1")
+            self.point_in_car_frame= rospy.Publisher('/goal_point_car_frame', MarkerArray, queue_size="1")
+
+        # Publisher for the goal point
+        self.goal_xy=rospy.Publisher(odom_topic+'_goal_xy', GoalPoint, queue_size=10)
+
         # Subscriber to vehicle position 
-        rospy.Subscriber(odom_topic, Odometry, self.callback, queue_size=100)
+        rospy.Subscriber(odom_topic, Odometry, self.callback, queue_size=10)
 
     # Import waypoints.csv into a list (path_points)
     def read_waypoints(self):
@@ -134,10 +143,15 @@ class pure_pursuit:
 
             # goal point 
             goal_point = pts_infrontofcar[idx]
-            self.visualize_point([goal_point],self.goal_pub)
+            if(self.debug_visualization):
+                self.visualize_point([goal_point],self.goal_pub)
 
-        
-      
+            gp = GoalPoint()
+            gp.header.stamp= rospy.Time.now()
+            gp.x = goal_point[0]
+            gp.y = goal_point[1]
+            self.goal_xy.publish(gp)
+
             # transform it into the vehicle coordinates
             v1 = (goal_point - curr_pos)[0].astype('double')
             xgv = (v1[0] * np.cos(yaw)) + (v1[1] * np.sin(yaw))

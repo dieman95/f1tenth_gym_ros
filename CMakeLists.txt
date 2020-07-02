@@ -56,6 +56,7 @@ add_message_files(
   FILES
   RaceInfo.msg
   StampedBool.msg
+  GoalPoint.msg
 )
 
 ## Generate services in the 'srv' folder

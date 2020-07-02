@@ -77,10 +77,10 @@ class DisparityExtenderDriving(object):
         self.pub_drive_param = rospy.Publisher(self.drive_topic,AckermannDriveStamped, queue_size=10)
 
         # visualize the chosen point 
-        self.debug_publisher = rospy.Publisher(self.scan_topic+'_debug',LaserScan,queue_size=10)
+        self.debug_publisher = rospy.Publisher(self.scan_topic+'_debug',LaserScan,queue_size=1)
 
         #this functionality depends on a functioning LIDAR so it subscribes to the lidar scans
-        rospy.Subscriber(self.scan_topic, LaserScan, self.lidar_callback,queue_size=100)
+        rospy.Subscriber(self.scan_topic, LaserScan, self.lidar_callback,queue_size=10)
 
         #create a variable that will store the lidar distances
         self.lidar_distances=None

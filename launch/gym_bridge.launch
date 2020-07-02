@@ -14,8 +14,13 @@
   <node pkg="f1tenth_gym_ros" name="gym_bridge" type="gym_bridge.py" output="screen"/>
 
   <!-- Launch the disparity extender nodes-->
-  <node pkg="f1tenth_gym_ros" name="disparity_extender_ego" type="disparity_extender.py" args="scan drive_cmd ego_racecar/laser" output="screen"/>
-  <node pkg="f1tenth_gym_ros" name="disparity_extender_opp" type="disparity_extender.py" args="opp_scan opp_drive_cmd opp_racecar/laser" output="screen"/>
+  <node pkg="f1tenth_gym_ros" name="disparity_extender_ego" type="disparity_extender.py" args="scan drive_cmd2 ego_racecar/laser" output="screen"/>
+  <!--<node pkg="f1tenth_gym_ros" name="disparity_extender_opp" type="disparity_extender.py" args="opp_scan opp_drive_cmd opp_racecar/laser" output="screen"/>-->
+
+
+  <!--launch the pure pursuit nodes-->
+  <node pkg="f1tenth_gym_ros" name="pure_pursuit_opp" type="pure_pursuit.py" args="unreal_285.csv opp_drive_cmd opp_odom" output="screen"/>
+  <node pkg="f1tenth_gym_ros" name="pure_pursuit_ego" type="pure_pursuit.py" args="unreal_285.csv drive_cmd odom" output="screen"/>
 
 
   <!--Launch the safety nodes-->
@@ -26,5 +31,7 @@
   <!--Launch the decision managers for each node-->
   <node pkg="f1tenth_gym_ros" name="decision_manager_ego" type="safety_decision_manager.py" args="brake_bool drive_cmd drive" output="screen"/>
   <node pkg="f1tenth_gym_ros" name="decision_manager_opp" type="safety_decision_manager.py" args="brake_bool_opp opp_drive_cmd opp_drive" output="screen"/>
+
+  <node pkg="f1tenth_gym_ros" name="hybrid_pp" type="hybrid_pure_pursuit.py" args="drive_cmd2 drive_cmd opp_odom drive2 odom_goal_xy" output="screen"/>
   
 </launch>

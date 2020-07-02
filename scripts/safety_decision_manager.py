@@ -10,12 +10,12 @@ class Decision_Manager:
     def __init__(self,safety_topic,drive_topic,drive_pub):
 
         # Initialize subscribers
-        self.scan_subscriber=Subscriber(safety_topic,StampedBool,queue_size=100)
-        self.odom_subscriber=Subscriber(drive_topic,AckermannDriveStamped,queue_size=100)
+        self.scan_subscriber=Subscriber(safety_topic,StampedBool,queue_size=10)
+        self.odom_subscriber=Subscriber(drive_topic,AckermannDriveStamped,queue_size=10)
         self.drive_publisher=rospy.Publisher(drive_pub,AckermannDriveStamped,queue_size=10)
 
         #create the time synchronizer
-        self.sub = ApproximateTimeSynchronizer([self.scan_subscriber,self.odom_subscriber], queue_size = 100, slop = 0.020)
+        self.sub = ApproximateTimeSynchronizer([self.scan_subscriber,self.odom_subscriber], queue_size = 100, slop = 0.05)
         #register the callback to the synchronizer
         self.sub.registerCallback(self.master_callback)
 

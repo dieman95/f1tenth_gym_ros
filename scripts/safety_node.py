@@ -22,14 +22,14 @@ class Safety(object):
         NOTE that the x component of the linear velocity in odom is the speed
         """
 
-        self.brake_bool=rospy.Publisher(brake_bool_topic,StampedBool,queue_size=100)
+        self.brake_bool=rospy.Publisher(brake_bool_topic,StampedBool,queue_size=10)
         self.odom_name = odom_topic
         # Initialize subscribers
-        self.scan_subscriber=Subscriber(scan_topic,LaserScan,queue_size=100)
-        self.odom_subscriber=Subscriber(odom_topic,Odometry,queue_size=100)
+        self.scan_subscriber=Subscriber(scan_topic,LaserScan,queue_size=10)
+        self.odom_subscriber=Subscriber(odom_topic,Odometry,queue_size=10)
 
         #create the time synchronizer
-        self.sub = ApproximateTimeSynchronizer([self.scan_subscriber,self.odom_subscriber], queue_size = 100, slop = 0.020)
+        self.sub = ApproximateTimeSynchronizer([self.scan_subscriber,self.odom_subscriber], queue_size = 10, slop = 0.05)
         #register the callback to the synchronizer
         self.sub.registerCallback(self.master_callback)
 
