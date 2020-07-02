@@ -23,7 +23,7 @@ class Safety(object):
         """
 
         self.brake_bool=rospy.Publisher(brake_bool_topic,StampedBool,queue_size=100)
-
+        self.odom_name = odom_topic
         # Initialize subscribers
         self.scan_subscriber=Subscriber(scan_topic,LaserScan,queue_size=100)
         self.odom_subscriber=Subscriber(odom_topic,Odometry,queue_size=100)
@@ -33,7 +33,7 @@ class Safety(object):
         #register the callback to the synchronizer
         self.sub.registerCallback(self.master_callback)
 
-        self.THRESHOLD=1.0
+        self.THRESHOLD=0.5
 
     def master_callback(self,scan_msg,odom_msg):
         
@@ -57,7 +57,7 @@ class Safety(object):
         msg.header.stamp=rospy.Time.now()
         if minimum_ttc < self.THRESHOLD:
             msg.data = True
-            rospy.loginfo("Engage AEB")
+            rospy.loginfo("Engage AEB: "+self.odom_name)
             
         else:
             msg.data = False

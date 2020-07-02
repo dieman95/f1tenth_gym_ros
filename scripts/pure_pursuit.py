@@ -15,7 +15,7 @@ import rospkg
 
 class pure_pursuit:
 
-    def __init__(self,waypoint_file):
+    def __init__(self,waypoint_file,drive_topic,odom_topic):
 
         # initialize class fields 
         self.waypoint_file = waypoint_file
@@ -30,13 +30,13 @@ class pure_pursuit:
         self.read_waypoints()
        
         # Publisher for 'drive_parameters' (speed and steering angle)
-        self.pub = rospy.Publisher('drive', AckermannDriveStamped, queue_size=100)
+        self.pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=100)
         # Publisher for the goal point
         self.goal_pub = rospy.Publisher('/goal_point', MarkerArray, queue_size="1")
         self.considered_pub= rospy.Publisher('/considered_points', MarkerArray, queue_size="1")
         self.point_in_car_frame= rospy.Publisher('/goal_point_car_frame', MarkerArray, queue_size="1")
         # Subscriber to vehicle position 
-        rospy.Subscriber("/odom", Odometry, self.callback, queue_size=100)
+        rospy.Subscriber(odom_topic, Odometry, self.callback, queue_size=100)
 
     # Import waypoints.csv into a list (path_points)
     def read_waypoints(self):
@@ -126,25 +126,31 @@ class pure_pursuit:
 
         pts_infrontofcar =np.asarray(pts_infrontofcar)
         # compute new distances
-        dist_arr = np.linalg.norm(pts_infrontofcar-curr_pos,axis=-1)- self.LOOKAHEAD_DISTANCE
+        if(pts_infrontofcar.shape[0]>0): 
+            dist_arr = np.linalg.norm(pts_infrontofcar-curr_pos,axis=-1)- self.LOOKAHEAD_DISTANCE
         
-        # get the point closest to the lookahead distance
-        idx = np.argmin(dist_arr)
+            # get the point closest to the lookahead distance
+            idx = np.argmin(dist_arr)
 
-        # goal point 
-        goal_point = pts_infrontofcar[idx]
-        self.visualize_point([goal_point],self.goal_pub)
+            # goal point 
+            goal_point = pts_infrontofcar[idx]
+            self.visualize_point([goal_point],self.goal_pub)
 
         
       
-        # transform it into the vehicle coordinates
-        v1 = (goal_point - curr_pos)[0].astype('double')
-        xgv = (v1[0] * np.cos(yaw)) + (v1[1] * np.sin(yaw))
-        ygv = (-v1[0] * np.sin(yaw)) + (v1[1] * np.cos(yaw))
+            # transform it into the vehicle coordinates
+            v1 = (goal_point - curr_pos)[0].astype('double')
+            xgv = (v1[0] * np.cos(yaw)) + (v1[1] * np.sin(yaw))
+            ygv = (-v1[0] * np.sin(yaw)) + (v1[1] * np.cos(yaw))
         
-        # calculate the steering angle
-        angle = math.atan2(ygv,xgv)
-        self.const_speed(angle)
+            # calculate the steering angle
+            angle = math.atan2(ygv,xgv)
+            self.const_speed(angle)
+
+        # right now just keep going straight but it will need to be more elegant
+        # TODO: make elegant
+        else:
+            self.const_speed(0.0)
    
     # USE THIS FUNCTION IF CHANGEABLE SPEED IS NEEDED
     def set_speed(self,angle):
@@ -155,6 +161,7 @@ class pure_pursuit:
     # USE THIS FUNCTION IF CONSTANT SPEED IS NEEDED
     def const_speed(self,angle):
         msg = AckermannDriveStamped()
+        msg.header.stamp=rospy.Time.now()
         msg.drive.steering_angle = angle
         msg.drive.speed = 2.0
         self.pub.publish(msg)
@@ -172,8 +179,12 @@ if __name__ == '__main__':
     args = rospy.myargv()[1:]
     # get the racecar name so we know what to subscribe to
     # get the path to the file containing the waypoints
+
     waypoint_file=args[0]
-    C = pure_pursuit(waypoint_file)  
+    drive_topic=args[1]
+    odom_topic=args[2]
+
+    C = pure_pursuit(waypoint_file,drive_topic,odom_topic)  
     r = rospy.Rate(40)
 
     while not rospy.is_shutdown():
