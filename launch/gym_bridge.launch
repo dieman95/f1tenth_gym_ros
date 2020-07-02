@@ -24,7 +24,7 @@
 
 
   <!--Launch the decision managers for each node-->
-  <node pkg="f1tenth_gym_ros" name="decision_manager_ego" type="decision_manager.py" args="brake_bool drive_cmd drive" output="screen"/>
-  <node pkg="f1tenth_gym_ros" name="decision_manager_opp" type="decision_manager.py" args="brake_bool_opp opp_drive_cmd opp_drive" output="screen"/>
+  <node pkg="f1tenth_gym_ros" name="decision_manager_ego" type="safety_decision_manager.py" args="brake_bool drive_cmd drive" output="screen"/>
+  <node pkg="f1tenth_gym_ros" name="decision_manager_opp" type="safety_decision_manager.py" args="brake_bool_opp opp_drive_cmd opp_drive" output="screen"/>
   
 </launch>
