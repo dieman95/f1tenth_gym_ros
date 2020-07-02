@@ -17,6 +17,6 @@
   <!--launch the disparity extender-->
   <node pkg="f1tenth_gym_ros" name="disparity_extender_ego" type="disparity_extender.py" args="scan drive_cmd ego_racecar/laser" output="screen"/>
   <!-- launch the decision manager node-->
-  <node pkg="f1tenth_gym_ros" name="decision_manager_ego" type="decision_manager.py" args="brake_bool drive_cmd drive" output="screen"/>
+  <node pkg="f1tenth_gym_ros" name="decision_manager_ego" type="safety_decision_manager.py" args="brake_bool drive_cmd drive" output="screen"/>
 
 </launch>
