@@ -55,6 +55,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   RaceInfo.msg
+  StampedBool.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -111,7 +112,7 @@ catkin_package(
 #  LIBRARIES f1tenth_gym_ros
 #  CATKIN_DEPENDS message_filters nav_msgs roscpp rospy sensor_msgs std_msgs visualization_msgs
 #  DEPENDS system_lib
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS message_runtime roscpp rospy sensor_msgs std_msgs 
 )
 
 ###########

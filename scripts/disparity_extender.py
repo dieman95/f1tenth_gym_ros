@@ -35,12 +35,10 @@ class DisparityExtenderDriving(object):
         self.scan_width = 270.0
 
         # The maximum range for our LIDAR is 10m
-
         self.lidar_max_range=10.0
 
         # This is the radius to the left or right of the car that must be clear
         # when the car is attempting to turn left or right.
-
         self.turn_clearance = 0.10
 
         # This is the maximum steering angle of the car, in degrees.
@@ -168,8 +166,8 @@ class DisparityExtenderDriving(object):
 
 
         
-
-            self.publish_speed_and_angle(thresholded_angle,0.2)
+            # specify the speed the car should move at 
+            self.publish_speed_and_angle(thresholded_angle,1.4)
 
 
     """Scale the speed in accordance to the forward distance"""
@@ -232,7 +230,7 @@ class DisparityExtenderDriving(object):
         msg = AckermannDriveStamped()
         msg.header.stamp=rospy.Time.now()
         msg.drive.steering_angle = angle
-        msg.drive.speed = speed#right now I want constant speed
+        msg.drive.speed = speed
         self.pub_drive_param.publish(msg)
 
 
