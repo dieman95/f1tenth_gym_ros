@@ -74,7 +74,7 @@ class DisparityExtenderDriving(object):
 
         #publisher for speed and angles 
 
-        self.pub_drive_param = rospy.Publisher(self.drive_topic,AckermannDriveStamped, queue_size=10)
+        self.pub_drive_param = rospy.Publisher(self.drive_topic,AckermannDriveStamped, queue_size=1)
 
         # visualize the chosen point 
         self.debug_publisher = rospy.Publisher(self.scan_topic+'_debug',LaserScan,queue_size=1)
@@ -95,6 +95,9 @@ class DisparityExtenderDriving(object):
         self.wheelbase_width=0.328
         self.gravity=9.81998#sea level
 
+        self.start_index=360
+        self.end_index= 720
+
 
     """ Main function callback for the car"""
     def lidar_callback(self,data):
@@ -105,10 +108,19 @@ class DisparityExtenderDriving(object):
             #convert the range to a numpy array so that we can process the data
             limited_ranges=np.asarray(ranges)
             #ignore everything outside the -90 to 90 degree range
-            limited_ranges[0:180]=0.0
-            limited_ranges[901:]=0.0
+
+            #limited_ranges[0:180]=0.0
+            #limited_ranges[901:]=0.0
+
+            limited_ranges[0:self.start_index] =0.0
+            limited_ranges[self.end_index+1:] =0.0
+
+
+
             #add this so that the last element is not detected as a disparity
-            limited_ranges[901]=limited_ranges[900]
+            #limited_ranges[901]=limited_ranges[900]
+            limited_ranges[self.end_index+1]=limited_ranges[self.end_index]
+
             indices=np.where(limited_ranges>=10.0)[0]
             limited_ranges[indices]=(10)-0.1
 
@@ -156,8 +168,8 @@ class DisparityExtenderDriving(object):
             behind_car=np.asarray(data.ranges)
             
             #the lidar sweeps counterclockwise so right is [0:180] and left is [901:]
-            behind_car_right=behind_car[0:180]
-            behind_car_left=behind_car[901:]
+            behind_car_right=behind_car[0:self.start_index]
+            behind_car_left=behind_car[self.end_index+1:]
 
             #change the steering angle based on whether we are safe
             thresholded_angle=self.adjust_turning_for_safety(behind_car_left,behind_car_right,thresholded_angle)
@@ -167,7 +179,7 @@ class DisparityExtenderDriving(object):
 
         
             # specify the speed the car should move at 
-            self.publish_speed_and_angle(thresholded_angle,1.4)
+            self.publish_speed_and_angle(thresholded_angle,1.2)
 
 
     """Scale the speed in accordance to the forward distance"""
@@ -227,11 +239,11 @@ class DisparityExtenderDriving(object):
 
     """Function that publishes the speed and angle so that the car drives around the track"""
     def publish_speed_and_angle(self,angle,speed):
-        msg = AckermannDriveStamped()
-        msg.header.stamp=rospy.Time.now()
-        msg.drive.steering_angle = angle
-        msg.drive.speed = speed
-        self.pub_drive_param.publish(msg)
+        pub_msg = AckermannDriveStamped()
+        pub_msg.header.stamp=rospy.Time.now()
+        pub_msg.drive.steering_angle = angle
+        pub_msg.drive.speed = speed
+        self.pub_drive_param.publish(pub_msg)
 
 
     """This function returns the angle we are targeting depending on which index corresponds to the farthest distance"""
@@ -271,7 +283,7 @@ class DisparityExtenderDriving(object):
         to_return = []
         values = arr
         #print("Why would you consider disparities behind the car",len(values))
-        for i in range(180,901):
+        for i in range(self.start_index,self.end_index):
             if abs(values[i] - values[i + 1]) >= threshold:
                 #print("disparity: ",(values[i], values[i + 1]))
                 #print("indices: ",(i, i + 1))
@@ -317,11 +329,11 @@ class DisparityExtenderDriving(object):
             for i in range(samples_to_extend):
                     # Stop trying to "extend" the disparity point if we reach the
                     # end of the array.
-                    if current_index < 180:
-                        current_index = 180
+                    if current_index < self.start_index:
+                        current_index = self.start_index
                         break
-                    if current_index >=901:
-                        current_index =900
+                    if current_index >=self.end_index+1:
+                        current_index =self.end_index
                         break
                     # Don't overwrite values if we've already found a nearer point
                     if ranges[current_index] > nearer_value:
@@ -343,5 +355,4 @@ if __name__ == '__main__':
     rospy.init_node('disparity_extender', anonymous=True)
     rospy.sleep(3)
     extendObj=DisparityExtenderDriving(scan_topic,drive_topic,frame_id)
-    rospy.Subscriber('scan', LaserScan, extendObj.lidar_callback)
     rospy.spin()

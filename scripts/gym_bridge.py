@@ -85,14 +85,14 @@ class GymBridge(object):
 
         # subs
         # self.drive_sub = rospy.Subscriber(self.ego_drive_topic, AckermannDriveStamped, self.drive_callback, queue_size=1)
-        self.drive_sub = message_filters.Subscriber(self.ego_drive_topic, AckermannDriveStamped, queue_size=1)
-        self.opp_drive_sub = message_filters.Subscriber(self.opp_drive_topic, AckermannDriveStamped, queue_size=1)
+        self.drive_sub = message_filters.Subscriber(self.ego_drive_topic, AckermannDriveStamped, queue_size=100)
+        self.opp_drive_sub = message_filters.Subscriber(self.opp_drive_topic, AckermannDriveStamped, queue_size=100)
 
-        ts = message_filters.ApproximateTimeSynchronizer([self.drive_sub, self.opp_drive_sub], 1, 0.05, allow_headerless=True)
+        ts = message_filters.ApproximateTimeSynchronizer([self.drive_sub, self.opp_drive_sub], 1, 0.05, allow_headerless=False)
         ts.registerCallback(self.drive_callback)
 
         # Timer
-        self.timer = rospy.Timer(rospy.Duration(0.004), self.timer_callback)
+        self.timer = rospy.Timer(rospy.Duration(0.001), self.timer_callback)
 
     def update_sim_state(self):
         self.ego_scan = list(self.obs['scans'][0])

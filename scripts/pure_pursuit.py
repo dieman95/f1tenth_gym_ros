@@ -33,7 +33,7 @@ class pure_pursuit:
         self.read_waypoints()
        
         # Publisher for 'drive_parameters' (speed and steering angle)
-        self.pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=10)
+        self.pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
         
         # Publisher for the goal point
         if(self.debug_visualization):
@@ -42,7 +42,7 @@ class pure_pursuit:
             self.point_in_car_frame= rospy.Publisher('/goal_point_car_frame', MarkerArray, queue_size="1")
 
         # Publisher for the goal point
-        self.goal_xy=rospy.Publisher(odom_topic+'_goal_xy', GoalPoint, queue_size=10)
+        self.goal_xy=rospy.Publisher(odom_topic+'_goal_xy', GoalPoint, queue_size=1)
 
         # Subscriber to vehicle position 
         rospy.Subscriber(odom_topic, Odometry, self.callback, queue_size=10)
@@ -177,7 +177,7 @@ class pure_pursuit:
         msg = AckermannDriveStamped()
         msg.header.stamp=rospy.Time.now()
         msg.drive.steering_angle = angle
-        msg.drive.speed = 2.0
+        msg.drive.speed = 1.0
         self.pub.publish(msg)
 
     # find the angle bewtween two vectors    
