@@ -156,7 +156,7 @@ class pure_pursuit:
     def const_speed(self,angle):
         msg = AckermannDriveStamped()
         msg.drive.steering_angle = angle
-        msg.drive.speed = 2.0
+        msg.drive.speed = 1.5
         self.pub.publish(msg)
 
     # find the angle bewtween two vectors    

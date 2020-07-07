@@ -343,5 +343,4 @@ if __name__ == '__main__':
     rospy.init_node('disparity_extender', anonymous=True)
     rospy.sleep(3)
     extendObj=DisparityExtenderDriving(scan_topic,drive_topic,frame_id)
-    rospy.Subscriber('scan', LaserScan, extendObj.lidar_callback)
     rospy.spin()

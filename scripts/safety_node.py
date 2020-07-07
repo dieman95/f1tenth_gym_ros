@@ -33,7 +33,7 @@ class Safety(object):
         #register the callback to the synchronizer
         self.sub.registerCallback(self.master_callback)
 
-        self.THRESHOLD=1.0
+        self.THRESHOLD=0.5
 
     def master_callback(self,scan_msg,odom_msg):
         
