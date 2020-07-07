@@ -34,7 +34,7 @@ class Hybrid_Pure_Pursuit:
         self.drive_publisher=rospy.Publisher(drive_topic,AckermannDriveStamped,queue_size=1)
 
         # switching threshold 
-        self.switch_distance_threshold = 1.0
+        self.switch_distance_threshold = 2.5
         #register the callback to the synchronizer
         self.sub.registerCallback(self.master_callback)
 
@@ -49,16 +49,28 @@ class Hybrid_Pure_Pursuit:
         # select which message to route through
 
         disparity_msg.header.stamp=rospy.Time.now()
-        disparity_msg.drive.speed = disparity_msg.drive.speed *1.5
         pure_pursuit_msg.header.stamp=rospy.Time.now()
 
 
         if(distance< self.switch_distance_threshold):
+
+            disparity_msg.drive.speed = self.set_speed(disparity_msg.drive.steering_angle,odom.twist.twist.linear.x)
             rospy.loginfo("distance: "+str(distance))
+
             self.drive_publisher.publish(disparity_msg)
         else:
             self.drive_publisher.publish(pure_pursuit_msg)
         self.visualize_point(pt,self.goal_pub)
+
+
+
+
+    def set_speed(self,angle,opp_speed):
+        if(angle<0.122173):
+            return opp_speed*2.0
+        else:
+            return opp_speed*1.1
+
 
     def visualize_point(self,pts,publisher,frame='/map',r=1.0,g=0.0,b=1.0):
         # create a marker array

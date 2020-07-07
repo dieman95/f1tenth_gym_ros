@@ -177,7 +177,7 @@ class pure_pursuit:
         msg = AckermannDriveStamped()
         msg.header.stamp=rospy.Time.now()
         msg.drive.steering_angle = angle
-        msg.drive.speed = 1.0
+        msg.drive.speed = 1.5
         self.pub.publish(msg)
 
     # find the angle bewtween two vectors    
