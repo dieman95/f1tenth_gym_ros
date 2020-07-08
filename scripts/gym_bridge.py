@@ -88,7 +88,7 @@ class GymBridge(object):
         self.drive_sub = message_filters.Subscriber(self.ego_drive_topic, AckermannDriveStamped, queue_size=100)
         self.opp_drive_sub = message_filters.Subscriber(self.opp_drive_topic, AckermannDriveStamped, queue_size=100)
 
-        ts = message_filters.ApproximateTimeSynchronizer([self.drive_sub, self.opp_drive_sub], 1, 0.05, allow_headerless=False)
+        ts = message_filters.ApproximateTimeSynchronizer([self.drive_sub, self.opp_drive_sub], 1, 0.07, allow_headerless=True)
         ts.registerCallback(self.drive_callback)
 
         # Timer

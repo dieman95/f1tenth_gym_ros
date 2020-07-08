@@ -159,7 +159,7 @@ class pure_pursuit:
         
             # calculate the steering angle
             angle = math.atan2(ygv,xgv)
-            self.const_speed(angle)
+            self.set_speed(angle)
 
         # right now just keep going straight but it will need to be more elegant
         # TODO: make elegant
@@ -168,7 +168,24 @@ class pure_pursuit:
    
     # USE THIS FUNCTION IF CHANGEABLE SPEED IS NEEDED
     def set_speed(self,angle):
-        pass
+        msg = AckermannDriveStamped()
+        msg.header.stamp=rospy.Time.now()
+        msg.drive.steering_angle = angle
+        speed= 1.5
+        angle = abs(angle)
+        if(angle==0.0):
+            speed = 3.5 
+        elif(angle<0.0872665):
+            speed = 3.2
+        elif (angle<0.174533):
+            speed =3.0
+        elif(angle < 0.261799):
+            speed = 2.7 
+        elif(angle< 0.349066):
+            speed = 2.9 
+
+        msg.drive.speed = speed
+        self.pub.publish(msg)
         
 
 
