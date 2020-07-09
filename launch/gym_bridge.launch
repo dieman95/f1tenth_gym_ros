@@ -20,7 +20,7 @@
   <node pkg="f1tenth_gym_ros" name="decision_manager_ego" type="safety_decision_manager.py" args="brake_bool drive_cmd drive" output="screen"/>-->
 
   <!--launch the pure pursuit node-->
-  <node pkg="f1tenth_gym_ros" name="pure_pursuit_ego" type="pure_pursuit.py" args="berlin_294.csv drive odom" output="log"/>
+  <node pkg="f1tenth_gym_ros" name="pure_pursuit_ego" type="pure_pursuit.py" args="berlin_294.csv drive odom" output="screen"/>
   <node pkg="f1tenth_gym_ros" name="visualization" type="visualize_markers.py" args="berlin_294.csv" output="log"/>
 
 </launch>

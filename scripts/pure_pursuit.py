@@ -158,13 +158,13 @@ class pure_pursuit:
         speed= 1.5
         angle = abs(angle)
         if(angle <0.01):
-            speed = 14.0
+            speed = 12.0
         elif(angle<0.0436332):
-            speed = 11.0 
+            speed = 11.5 
         elif(angle < 0.0872665):
-            speed = 7.5
+            speed = 8.2
         elif(angle<0.1309):
-            speed = 6.0 
+            speed = 6.6 
         elif(angle < 0.174533):
             speed = 5.5
         elif(angle < 0.261799):
@@ -172,7 +172,7 @@ class pure_pursuit:
         elif(angle < 0.349066):
             speed = 5.0
         else:
-            speed = 4.5
+            speed = 5.0
         
         print(speed)
 
