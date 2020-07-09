@@ -157,12 +157,12 @@ class pure_pursuit:
         msg.drive.steering_angle = angle
         speed= 1.5
         angle = abs(angle)
-        if(angle == 0.0):
-            speed = 12.0
+        if(angle <0.01):
+            speed = 14.0
         elif(angle<0.0436332):
-            speed = 12.0 
+            speed = 11.0 
         elif(angle < 0.0872665):
-            speed = 11.0
+            speed = 7.5
         elif(angle<0.1309):
             speed = 6.0 
         elif(angle < 0.174533):
@@ -174,6 +174,7 @@ class pure_pursuit:
         else:
             speed = 4.5
         
+        print(speed)
 
         msg.drive.speed = speed
         self.pub.publish(msg)
