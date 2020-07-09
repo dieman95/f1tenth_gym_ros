@@ -39,7 +39,7 @@ class DisparityExtenderDriving(object):
 
         # This is the radius to the left or right of the car that must be clear
         # when the car is attempting to turn left or right.
-        self.turn_clearance = 0.10
+        self.turn_clearance = 0.15
 
         # This is the maximum steering angle of the car, in degrees.
 

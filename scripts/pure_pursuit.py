@@ -158,22 +158,24 @@ class pure_pursuit:
         speed= 1.5
         angle = abs(angle)
         if(angle <0.01):
-            speed = 12.0
-        elif(angle<0.0436332):
-            speed = 11.5 
+            speed = 11.5
+        elif(angle<0.0336332):
+            speed = 11.1
         elif(angle < 0.0872665):
-            speed = 8.2
+            speed = 7.6
         elif(angle<0.1309):
-            speed = 6.6 
+            speed = 6.5 
         elif(angle < 0.174533):
-            speed = 5.5
+            speed = 6.0
         elif(angle < 0.261799):
-            speed = 5.3
+            speed = 5.5
         elif(angle < 0.349066):
-            speed = 5.0
+            speed = 5.2
+        elif(angle < 0.436332):
+            speed = 5.1
         else:
-            speed = 5.0
-        
+            print("more than 25 degrees",angle)
+            speed = 4.8
         print(speed)
 
         msg.drive.speed = speed
