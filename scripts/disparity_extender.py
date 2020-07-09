@@ -341,6 +341,5 @@ if __name__ == '__main__':
     drive_topic=args[1]
     frame_id = args[2]
     rospy.init_node('disparity_extender', anonymous=True)
-    rospy.sleep(3)
     extendObj=DisparityExtenderDriving(scan_topic,drive_topic,frame_id)
     rospy.spin()
