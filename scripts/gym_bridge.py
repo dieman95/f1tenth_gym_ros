@@ -31,6 +31,7 @@ class GymBridge(object):
 
         self.map_path = rospy.get_param('map_path')
         self.map_img_ext = rospy.get_param('map_img_ext')
+        print(self.map_path, self.map_img_ext)
         exec_dir = rospy.get_param('executable_dir')
 
         scan_fov = rospy.get_param('scan_fov')
@@ -68,6 +69,10 @@ class GymBridge(object):
 
         # keep track of latest sim state
         self.ego_scan = list(self.obs['scans'][0])
+        
+        # keep track of collision
+        self.ego_collision = False
+        self.opp_collision = False
 
         # transform broadcaster
         self.br = transform_broadcaster.TransformBroadcaster()
@@ -141,8 +146,12 @@ class GymBridge(object):
     def publish_race_info(self, ts):
         info = RaceInfo()
         info.header.stamp = ts
-        info.ego_collision = self.obs['collisions'][0]
-        info.opp_collision = self.obs['collisions'][1]
+        if not self.ego_collision:
+            self.ego_collision = self.obs['collisions'][0]
+        if not self.opp_collision:
+            self.opp_collision = self.obs['collisions'][1]
+        info.ego_collision = self.ego_collision
+        info.opp_collision = self.opp_collision
         info.ego_elapsed_time = self.obs['lap_times'][0]
         info.opp_elapsed_time = self.obs['lap_times'][1]
         info.ego_lap_count = self.obs['lap_counts'][0]
