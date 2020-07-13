@@ -134,12 +134,6 @@ class GymBridge(object):
     #     action = {'ego_idx': 0, 'speed': [ego_speed, opp_speed], 'steer': [self.ego_steer, self.opp_steer]}
     #     self.obs, step_reward, self.done, info = self.racecar_env.step(action)
 
-<<<<<<< HEAD
-        action = {'ego_idx': 0, 'speed': [ego_speed, opp_speed], 'steer': [self.ego_steer, self.opp_steer]}
-        self.obs, step_reward, self.done, info = self.racecar_env.step(action)
-        #print("executed")
-        self.update_sim_state()
-=======
     #     self.update_sim_state()
 
     def drive_callback(self, drive_msg):
@@ -158,7 +152,6 @@ class GymBridge(object):
             action = {'ego_idx': 0, 'speed': [self.ego_requested_speed, self.opp_requested_speed], 'steer': [self.ego_steer, self.opp_steer]}
             self.obs, step_reward, self.done, info = self.racecar_env.step(action)
             self.update_sim_state()
->>>>>>> upstream/multi_node
 
     def timer_callback(self, timer):
         ts = rospy.Time.now()
