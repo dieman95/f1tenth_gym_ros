@@ -150,7 +150,7 @@ class pure_pursuit:
             gp.header.stamp= rospy.Time.now()
             gp.x = goal_point[0]
             gp.y = goal_point[1]
-            self.goal_xy.publish(gp)
+            #self.goal_xy.publish(gp)
 
             # transform it into the vehicle coordinates
             v1 = (goal_point - curr_pos)[0].astype('double')
@@ -173,16 +173,26 @@ class pure_pursuit:
         msg.drive.steering_angle = angle
         speed= 1.5
         angle = abs(angle)
-        if(angle==0.0):
-            speed = 3.5 
-        elif(angle<0.0872665):
-            speed = 3.2
-        elif (angle<0.174533):
-            speed =3.0
+        if(angle <0.01):
+            speed = 5.0#11.5
+        elif(angle<0.0336332):
+            speed = 4.5#11.1
+        elif(angle < 0.0872665):
+            speed = 3.5#7.6
+        elif(angle<0.1309):
+            speed = 3.25#6.5 
+        elif(angle < 0.174533):
+            speed = 2.4#6.0
         elif(angle < 0.261799):
-            speed = 2.7 
-        elif(angle< 0.349066):
-            speed = 2.9 
+            speed = 2.3#5.5
+        elif(angle < 0.349066):
+            speed = 2.15#3.2
+        elif(angle < 0.436332):
+            speed = 2.0#5.1
+        else:
+            print("more than 25 degrees",angle)
+            speed = 1.5
+        print(speed)
 
         msg.drive.speed = speed
         self.pub.publish(msg)

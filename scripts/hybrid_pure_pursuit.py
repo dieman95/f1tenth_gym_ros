@@ -12,8 +12,8 @@ import numpy as np
 
 
 class Hybrid_Pure_Pursuit:
-    def __init__(self,disparity_topic,pure_pursuit_topic,opp_odom_topic,drive_topic,goal_point_topic):
-        print(disparity_topic,pure_pursuit_topic,opp_odom_topic,drive_topic,goal_point_topic)
+    def __init__(self,disparity_topic,pure_pursuit_topic,opp_odom_topic,drive_topic,own_odom):
+        print(disparity_topic,pure_pursuit_topic,opp_odom_topic,drive_topic,own_odom)
 
         # subscriber to messages published by the disparity extender
         self.disparity_sub=Subscriber(disparity_topic,AckermannDriveStamped,queue_size=10)
@@ -24,9 +24,9 @@ class Hybrid_Pure_Pursuit:
         # subscriber to the opponents odom, since we get it for free (this isn't ideal but eh)
         self.opponent_odometry_sub=Subscriber(opp_odom_topic,Odometry,queue_size=10)
 
-        self.pure_pursuit_goal_sub=Subscriber(goal_point_topic,GoalPoint,queue_size=10)
+        self.own_odometry=Subscriber(own_odom,Odometry,queue_size=10)
 
-        self.sub = ApproximateTimeSynchronizer([self.disparity_sub,self.pure_pursuit_sub,self.opponent_odometry_sub,self.pure_pursuit_goal_sub], queue_size = 10, slop = 0.05)
+        self.sub = ApproximateTimeSynchronizer([self.disparity_sub,self.pure_pursuit_sub,self.opponent_odometry_sub,self.own_odometry], queue_size = 10, slop = 0.05)
         
         # debug visualization of marker array
         self.goal_pub = rospy.Publisher('pure_pursuit_goal_point', MarkerArray, queue_size="1")
@@ -39,8 +39,8 @@ class Hybrid_Pure_Pursuit:
         self.sub.registerCallback(self.master_callback)
 
 
-    def master_callback(self,disparity_msg,pure_pursuit_msg,odom,goal_point_topic):
-        pt = np.asarray([goal_point_topic.x,goal_point_topic.y]).reshape((1,2))
+    def master_callback(self,disparity_msg,pure_pursuit_msg,odom,own_odom):
+        pt = np.asarray([own_odom.pose.pose.position.x,own_odom.pose.pose.position.y]).reshape((1,2))
         opp_pt = np.asarray([odom.pose.pose.position.x,odom.pose.pose.position.y]).reshape((1,2))
 
         distance = np.linalg.norm(opp_pt-pt)
@@ -117,9 +117,9 @@ if __name__ == '__main__':
     pure_pursuit_topic=args[1]
     opp_odom_topic=args[2]
     drive_topic=args[3]
-    gp_topic=args[4]
+    own_odom=args[4]
 
-    C = Hybrid_Pure_Pursuit(disparity_topic,pure_pursuit_topic,opp_odom_topic,drive_topic,gp_topic)  
+    C = Hybrid_Pure_Pursuit(disparity_topic,pure_pursuit_topic,opp_odom_topic,drive_topic, own_odom)  
     r = rospy.Rate(40)
 
     while not rospy.is_shutdown():
