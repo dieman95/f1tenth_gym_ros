@@ -2,10 +2,18 @@
 <launch>
   
   <!--Launch a map from the maps folder-->
-  <!--<arg name="map" default="$(find f1tenth_gym_ros)/maps/skirk.yaml"/>-->
-  <!--<arg name="map" default="$(find f1tenth_gym_ros)/maps/unreal.yaml"/>-->
   <arg name="map" default="$(find f1tenth_gym_ros)/maps/berlin.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
+
+
+  <!--Specify scan topics for opponent and self-->
+
+  <arg name="ego_scan" value="scan"/>
+  <arg name="ego_odom" value="odom"/>
+  <arg name="ego_drive" value="drive"/>
+  <arg name="opp_scan" value="opp_scan"/>
+  <arg name="opp_odom" value="opp_odom"/>
+
 
   <!-- Launch robot model -->
   <include file="$(find f1tenth_gym_ros)/launch/racecar_model.launch"/>
@@ -15,24 +23,14 @@
   <node pkg="f1tenth_gym_ros" name="gym_bridge" type="gym_bridge.py" output="screen"/>
 
   <!-- Launch the disparity extender nodes-->
-  <node pkg="f1tenth_gym_ros" name="disparity_extender_ego" type="disparity_extender.py" args="scan drive_cmda ego_racecar/laser" output="log"/>
+  <node pkg="f1tenth_gym_ros" name="disparity_extender_ego" type="disparity_extender.py" args="$(arg ego_scan) drive_cmda ego_racecar/laser" output="log"/>
   <!--<node pkg="f1tenth_gym_ros" name="disparity_extender_opp" type="disparity_extender.py" args="opp_scan opp_drive_cmd opp_racecar/laser" output="screen"/>-->
 
 
   <!--launch the pure pursuit nodes-->
   <node pkg="f1tenth_gym_ros" name="pure_pursuit_opp" type="pure_pursuit.py" args="berlin_309.csv  opp_drive opp_odom" output="log"/>
-  <node pkg="f1tenth_gym_ros" name="pure_pursuit_ego" type="pure_pursuit.py" args="berlin_309.csv  drive_cmd odom" output="log"/>
+  <node pkg="f1tenth_gym_ros" name="pure_pursuit_ego" type="pure_pursuit.py" args="berlin_309.csv  drive_cmd $(arg ego_odom)" output="log"/>
 
-
-  <!--Launch the safety nodes
-  <node pkg="f1tenth_gym_ros" name="safety_node_ego" type="safety_node.py" args="scan odom brake_bool" output="screen"/>
-  <node pkg="f1tenth_gym_ros" name="safety_node_opp" type="safety_node.py" args="opp_scan opp_odom brake_bool_opp" output="screen"/>-->
-
-
-  <!--Launch the decision managers for each node-->
-  <!--<node pkg="f1tenth_gym_ros" name="decision_manager_ego" type="safety_decision_manager.py" args="brake_bool drive_cmd drive" output="screen"/>
-  <node pkg="f1tenth_gym_ros" name="decision_manager_opp" type="safety_decision_manager.py" args="brake_bool_opp opp_drive_cmd opp_drive" output="screen"/>-->
-
-  <node pkg="f1tenth_gym_ros" name="hybrid_pp" type="hybrid_pure_pursuit.py" args="drive_cmda drive_cmd opp_odom drive odom" output="log"/>
+  <node pkg="f1tenth_gym_ros" name="hybrid_pp" type="hybrid_pure_pursuit.py" args="drive_cmda drive_cmd $(arg opp_odom) $(arg ego_drive) $(arg ego_odom) $(arg ego_odom)_goal_xy" output="screen"/>
   
 </launch>

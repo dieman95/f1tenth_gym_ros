@@ -37,7 +37,7 @@ class pure_pursuit:
         
         # Publisher for the goal point
         if(self.debug_visualization):
-            self.goal_pub = rospy.Publisher('/goal_point', MarkerArray, queue_size="1")
+            self.goal_pub = rospy.Publisher('goal_point', MarkerArray, queue_size="1")
             self.considered_pub= rospy.Publisher('/considered_points', MarkerArray, queue_size="1")
             self.point_in_car_frame= rospy.Publisher('/goal_point_car_frame', MarkerArray, queue_size="1")
 
@@ -143,14 +143,15 @@ class pure_pursuit:
 
             # goal point 
             goal_point = pts_infrontofcar[idx]
-            if(self.debug_visualization):
-                self.visualize_point([goal_point],self.goal_pub)
-
             gp = GoalPoint()
             gp.header.stamp= rospy.Time.now()
             gp.x = goal_point[0]
             gp.y = goal_point[1]
-            #self.goal_xy.publish(gp)
+            self.goal_xy.publish(gp)
+
+
+            if(self.debug_visualization):
+                self.visualize_point([goal_point],self.goal_pub)
 
             # transform it into the vehicle coordinates
             v1 = (goal_point - curr_pos)[0].astype('double')

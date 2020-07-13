@@ -39,7 +39,7 @@ class DisparityExtenderDriving(object):
 
         # This is the radius to the left or right of the car that must be clear
         # when the car is attempting to turn left or right.
-        self.turn_clearance = 0.10
+        self.turn_clearance = 0.05
 
         # This is the maximum steering angle of the car, in degrees.
 
@@ -77,7 +77,7 @@ class DisparityExtenderDriving(object):
         self.pub_drive_param = rospy.Publisher(self.drive_topic,AckermannDriveStamped, queue_size=1)
 
         # visualize the chosen point 
-        self.debug_publisher = rospy.Publisher(self.scan_topic+'_debug',LaserScan,queue_size=1)
+        self.debug_publisher = rospy.Publisher(self.scan_topic+'_debug',LaserScan,queue_size=10)
 
         #this functionality depends on a functioning LIDAR so it subscribes to the lidar scans
         rospy.Subscriber(self.scan_topic, LaserScan, self.lidar_callback,queue_size=10)
