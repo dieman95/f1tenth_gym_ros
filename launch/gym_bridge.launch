@@ -1,10 +1,19 @@
 <?xml version="1.0"?>
 <launch>
   
-   <!--Launch a map from the maps folder-->
-  <!--<arg name="map" default="$(find f1tenth_gym_ros)/maps/skirk.yaml"/>-->
-  <arg name="map" default="$(find f1tenth_gym_ros)/maps/unreal.yaml"/>
+  <!--Launch a map from the maps folder-->
+  <arg name="map" default="$(find f1tenth_gym_ros)/maps/berlin.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
+
+
+  <!--Specify scan topics for opponent and self-->
+
+  <arg name="ego_scan" value="scan"/>
+  <arg name="ego_odom" value="odom"/>
+  <arg name="ego_drive" value="drive"/>
+  <arg name="opp_scan" value="opp_scan"/>
+  <arg name="opp_odom" value="opp_odom"/>
+
 
   <!-- Launch robot model -->
   <include file="$(find f1tenth_gym_ros)/launch/racecar_model.launch"/>
@@ -13,8 +22,15 @@
   <rosparam command="load" file="$(find f1tenth_gym_ros)/params.yaml"/>
   <node pkg="f1tenth_gym_ros" name="gym_bridge" type="gym_bridge.py" output="screen"/>
 
+  <!-- Launch the disparity extender nodes-->
+  <node pkg="f1tenth_gym_ros" name="disparity_extender_ego" type="disparity_extender.py" args="$(arg ego_scan) drive_cmda ego_racecar/laser" output="log"/>
+  <!--<node pkg="f1tenth_gym_ros" name="disparity_extender_opp" type="disparity_extender.py" args="opp_scan opp_drive_cmd opp_racecar/laser" output="screen"/>-->
 
-  <node pkg="f1tenth_gym_ros" name="disparity_extender_ego" type="disparity_extender.py" args="scan drive ego_racecar/laser" output="log"/>
-  <node pkg="f1tenth_gym_ros" name="disparity_extender_opp" type="disparity_extender.py" args="opp_scan opp_drive opp_racecar/laser" output="screen"/>
+
+  <!--launch the pure pursuit nodes
+  <node pkg="f1tenth_gym_ros" name="pure_pursuit_opp" type="pure_pursuit.py" args="berlin_309.csv  opp_drive opp_odom" output="log"/>-->
+  <node pkg="f1tenth_gym_ros" name="pure_pursuit_ego" type="pure_pursuit.py" args="berlin_309.csv  drive_cmd $(arg ego_odom)" output="log"/>
+
+  <node pkg="f1tenth_gym_ros" name="hybrid_pp" type="hybrid_pure_pursuit.py" args="drive_cmda drive_cmd $(arg opp_odom) $(arg ego_drive) $(arg ego_odom) $(arg ego_odom)_goal_xy" output="screen"/>
   
 </launch>

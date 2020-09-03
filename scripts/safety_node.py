@@ -1,19 +1,18 @@
 #!/usr/bin/env python
-import rospy
 
 import rospy
 from ackermann_msgs.msg import AckermannDriveStamped
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Bool
+from f1tenth_gym_ros.msg import StampedBool
 import numpy as np
 
 class Safety(object):
     """
     The class that handles emergency braking.
     """
-    def __init__(self):
+    def __init__(self,scan_topic,odom_topic,brake_bool_topic):
         """
         One publisher should publish to the /brake topic with a AckermannDriveStamped brake message.
         One publisher should publish to the /brake_bool topic with a Bool message.
@@ -23,19 +22,18 @@ class Safety(object):
         NOTE that the x component of the linear velocity in odom is the speed
         """
 
-        self.brake_bool=rospy.Publisher('brake_bool',Bool,queue_size=100)
-
+        self.brake_bool=rospy.Publisher(brake_bool_topic,StampedBool,queue_size=10)
+        self.odom_name = odom_topic
         # Initialize subscribers
-        self.scan_subscriber=Subscriber('scan',LaserScan,queue_size=100)
-        self.odom_subscriber=Subscriber('odom',Odometry,queue_size=100)
+        self.scan_subscriber=Subscriber(scan_topic,LaserScan,queue_size=10)
+        self.odom_subscriber=Subscriber(odom_topic,Odometry,queue_size=10)
 
         #create the time synchronizer
-        self.sub = ApproximateTimeSynchronizer([self.scan_subscriber,self.odom_subscriber], queue_size = 100, slop = 0.020)
+        self.sub = ApproximateTimeSynchronizer([self.scan_subscriber,self.odom_subscriber], queue_size = 10, slop = 0.05)
         #register the callback to the synchronizer
         self.sub.registerCallback(self.master_callback)
 
-        self.THRESHOLD=1.0
-        self.speed = 0
+        self.THRESHOLD=0.5
 
     def master_callback(self,scan_msg,odom_msg):
         
@@ -55,22 +53,27 @@ class Safety(object):
         # minimum ttc
         minimum_ttc = min(ttc)
 
-        
+        msg= StampedBool()
+        msg.header.stamp=rospy.Time.now()
         if minimum_ttc < self.THRESHOLD:
-            msg= Bool()
             msg.data = True
-            rospy.loginfo("Engage AEB")
-            self.brake_bool.publish(msg,queue=10)
-
-
-        self.speed = 0
-
-    
+            rospy.loginfo("Engage AEB: "+self.odom_name)
+            
+        else:
+            msg.data = False
+        self.brake_bool.publish(msg)
 
 
 def main():
+
+    # get arguments from a launch file 
+    args = rospy.myargv()[1:]
+    scan_topic=args[0]
+    odom_topic=args[1]
+    brake_bool_topic = args[2]
+
     rospy.init_node('safety_node')
-    sn = Safety()
+    sn = Safety(scan_topic,odom_topic,brake_bool_topic)
     rospy.spin()
 if __name__ == '__main__':
     main()
