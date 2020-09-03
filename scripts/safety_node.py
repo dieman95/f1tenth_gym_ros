@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-import rospy
 
 import rospy
 from ackermann_msgs.msg import AckermannDriveStamped
 from message_filters import ApproximateTimeSynchronizer, Subscriber
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Bool
+from f1tenth_gym_ros.msg import StampedBool
 import numpy as np
 
 class Safety(object):
@@ -23,7 +22,7 @@ class Safety(object):
         NOTE that the x component of the linear velocity in odom is the speed
         """
 
-        self.brake_bool=rospy.Publisher('brake_bool',Bool,queue_size=100)
+        self.brake_bool=rospy.Publisher('brake_bool',StampedBool,queue_size=100)
 
         # Initialize subscribers
         self.scan_subscriber=Subscriber('scan',LaserScan,queue_size=100)
@@ -34,8 +33,7 @@ class Safety(object):
         #register the callback to the synchronizer
         self.sub.registerCallback(self.master_callback)
 
-        self.THRESHOLD=1.0
-        self.speed = 0
+        self.THRESHOLD=0.5
 
     def master_callback(self,scan_msg,odom_msg):
         
@@ -55,17 +53,15 @@ class Safety(object):
         # minimum ttc
         minimum_ttc = min(ttc)
 
-        
+        msg= StampedBool()
+        msg.header.stamp=rospy.Time.now()
         if minimum_ttc < self.THRESHOLD:
-            msg= Bool()
             msg.data = True
             rospy.loginfo("Engage AEB")
-            self.brake_bool.publish(msg,queue=10)
-
-
-        self.speed = 0
-
-    
+            
+        else:
+            msg.data = False
+        self.brake_bool.publish(msg)
 
 
 def main():

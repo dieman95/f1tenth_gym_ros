@@ -21,7 +21,7 @@ class pure_pursuit:
         self.waypoint_file = waypoint_file
 
         # pure pursuit parameters
-        self.LOOKAHEAD_DISTANCE = 1.5#1.70 # meters
+        self.LOOKAHEAD_DISTANCE = 1.50#1.70 # meters
         
         # Distance from the 
         self.distance_from_rear_wheel_to_front_wheel = 0.5
@@ -126,37 +126,70 @@ class pure_pursuit:
 
         pts_infrontofcar =np.asarray(pts_infrontofcar)
         # compute new distances
-        dist_arr = np.linalg.norm(pts_infrontofcar-curr_pos,axis=-1)- self.LOOKAHEAD_DISTANCE
+        if(pts_infrontofcar.shape[0]>0): 
+            dist_arr = np.linalg.norm(pts_infrontofcar-curr_pos,axis=-1)- self.LOOKAHEAD_DISTANCE
         
-        # get the point closest to the lookahead distance
-        idx = np.argmin(dist_arr)
+            # get the point closest to the lookahead distance
+            idx = np.argmin(dist_arr)
 
-        # goal point 
-        goal_point = pts_infrontofcar[idx]
-        self.visualize_point([goal_point],self.goal_pub)
+            # goal point 
+            goal_point = pts_infrontofcar[idx]
+            self.visualize_point([goal_point],self.goal_pub)
 
+            # transform it into the vehicle coordinates
+            v1 = (goal_point - curr_pos)[0].astype('double')
+            xgv = (v1[0] * np.cos(yaw)) + (v1[1] * np.sin(yaw))
+            ygv = (-v1[0] * np.sin(yaw)) + (v1[1] * np.cos(yaw))
         
-      
-        # transform it into the vehicle coordinates
-        v1 = (goal_point - curr_pos)[0].astype('double')
-        xgv = (v1[0] * np.cos(yaw)) + (v1[1] * np.sin(yaw))
-        ygv = (-v1[0] * np.sin(yaw)) + (v1[1] * np.cos(yaw))
-        
-        # calculate the steering angle
-        angle = math.atan2(ygv,xgv)
-        self.const_speed(angle)
+            # calculate the steering angle
+            angle = math.atan2(ygv,xgv)
+            self.set_speed(angle)
+
+        # right now just keep going straight but it will need to be more elegant
+        # TODO: make elegant
+        else:
+            self.const_speed(2.0)
    
     # USE THIS FUNCTION IF CHANGEABLE SPEED IS NEEDED
     def set_speed(self,angle):
-        pass
+        msg = AckermannDriveStamped()
+        msg.header.stamp=rospy.Time.now()
+        msg.drive.steering_angle = angle
+        speed= 1.5
+        angle = abs(angle)
+        if(angle <0.01):
+            speed = 10.0#11.5
+        elif(angle<0.0336332):
+            speed = 9.0#11.1
+        elif(angle < 0.0872665):
+            speed = 7.0#7.6
+        elif(angle<0.1309):
+            speed = 6.5#6.5 
+        elif(angle < 0.174533):
+            speed = 4.8#6.0
+        elif(angle < 0.261799):
+            speed = 4.6#5.5
+        elif(angle < 0.349066):
+            speed = 4.3#3.2
+        elif(angle < 0.436332):
+            speed = 4.0#5.1
+        else:
+            print("more than 25 degrees",angle)
+            speed = 3.0
+        print(speed)
+
+        msg.drive.speed = speed
+        self.pub.publish(msg)
+
         
 
 
     # USE THIS FUNCTION IF CONSTANT SPEED IS NEEDED
     def const_speed(self,angle):
         msg = AckermannDriveStamped()
+        msg.header.stamp=rospy.Time.now()
         msg.drive.steering_angle = angle
-        msg.drive.speed = 2.0
+        msg.drive.speed = 1.5
         self.pub.publish(msg)
 
     # find the angle bewtween two vectors    

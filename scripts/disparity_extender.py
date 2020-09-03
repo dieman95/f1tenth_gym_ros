@@ -17,12 +17,13 @@ class DisparityExtenderDriving(object):
 
     #constructor for our DisparityExtenderDrivng Object
     #stores configuration parameters neccessary for successful execution of our algorithm
-    def __init__(self):
-
+    def __init__(self,scan_topic,drive_topic, frame_id):
         # This is actually "half" of the car width, plus some tolerance.
         # Controls the amount disparities are extended by.
-
-        self.car_width = 0.50#0.50
+        self.scan_topic = scan_topic
+        self.drive_topic = drive_topic
+        self.car_width = 0.50 #0.50
+        self.frame_id = frame_id
 
         # This is the difference between two successive LIDAR scan points that
         # can be considered a "disparity". (As a note, at 7m there should be
@@ -31,17 +32,14 @@ class DisparityExtenderDriving(object):
         self.disparity_threshold = 0.3
 
         # This is the arc width of the full LIDAR scan data, in degrees, We are using the Hokuyo UST-10LX
-
         self.scan_width = 270.0
 
         # The maximum range for our LIDAR is 10m
-
         self.lidar_max_range=10.0
 
         # This is the radius to the left or right of the car that must be clear
         # when the car is attempting to turn left or right.
-
-        self.turn_clearance = 0.10
+        self.turn_clearance = 0.15
 
         # This is the maximum steering angle of the car, in degrees.
 
@@ -56,20 +54,16 @@ class DisparityExtenderDriving(object):
         # 0.5, which is *very* fast). 0.15 is a good max for slow testing.
 
         self.max_speed = 3.5 #.20
-
         self.absolute_max_speed = 6.00 # 0.3
 
         # The forward distance at which the car will go its minimum speed.
         # If there's not enough clearance in front of the car it will stop.
-
         self.min_distance = 0.15
 
         # The forward distance over which the car will go its maximum speed.
         # Any distance between this and the minimum scales the speed linearly.
-
         self.max_distance = 3.0
         self.absolute_max_distance=6.0
-
         # The forward distance over which the car will go its *absolute
         # maximum* speed. This distance indicates there are no obstacles in
         # the near path of the car. Distance between this and the max_distance
@@ -80,10 +74,13 @@ class DisparityExtenderDriving(object):
 
         #publisher for speed and angles 
 
-        self.pub_drive_param = rospy.Publisher('drive',AckermannDriveStamped, queue_size=100)
+        self.pub_drive_param = rospy.Publisher(self.drive_topic,AckermannDriveStamped, queue_size=10)
+
+        # visualize the chosen point 
+        self.debug_publisher = rospy.Publisher(self.scan_topic+'_debug',LaserScan,queue_size=10)
 
         #this functionality depends on a functioning LIDAR so it subscribes to the lidar scans
-        rospy.Subscriber('scan', LaserScan, self.lidar_callback,queue_size=100)
+        rospy.Subscriber(self.scan_topic, LaserScan, self.lidar_callback,queue_size=100)
 
         #create a variable that will store the lidar distances
         self.lidar_distances=None
@@ -98,67 +95,84 @@ class DisparityExtenderDriving(object):
         self.wheelbase_width=0.328
         self.gravity=9.81998#sea level
 
-    
-
-
-   
-
 
     """ Main function callback for the car"""
     def lidar_callback(self,data):
-        ranges=data.ranges
-        #convert the range to a numpy array so that we can process the data
-        limited_ranges=np.asarray(ranges)
-        #ignore everything outside the -90 to 90 degree range
-        limited_ranges[0:180]=0.0
-        limited_ranges[901:]=0.0
-        #add this so that the last element is not detected as a disparity
-        limited_ranges[901]=limited_ranges[900]
-        indices=np.where(limited_ranges>=10.0)[0]
-        limited_ranges[indices]=(data.range_max)-0.1
+        # not exactly sure how I'm getting the other car's messages 
+        # so I filter them out
+        if(data.header.frame_id==self.frame_id):
+            ranges=data.ranges
+            #convert the range to a numpy array so that we can process the data
+            limited_ranges=np.asarray(ranges)
+            #ignore everything outside the -90 to 90 degree range
+            limited_ranges[0:180]=0.0
+            limited_ranges[901:]=0.0
+            #add this so that the last element is not detected as a disparity
+            limited_ranges[901]=limited_ranges[900]
+            indices=np.where(limited_ranges>=10.0)[0]
+            limited_ranges[indices]=(10)-0.1
 
-        #calculate the disparities between samples
-        threshold=self.disparity_threshold
-        car_width=self.car_width
-        disparities=self.find_disparities(limited_ranges,threshold)
+            #calculate the disparities between samples
+            disparities=self.find_disparities(limited_ranges,self.disparity_threshold)
+            
+            #go through the disparities and extend the disparities 
+            new_ranges=self.extend_disparities(limited_ranges,disparities)
+
+            #compute the max_value of the new limited values
+            max_value=np.max(new_ranges)
+            target_indices=np.where(new_ranges>=max_value)[0]
+            
+            #figure out which direction we should target based on the max distances we computed from disparities
+            target_index=self.calculate_target_distance(target_indices)
+            
+            
+
+            # debugging visualization
+            scan = LaserScan()
+            scan.header.stamp = rospy.Time.now()
+            scan.header.frame_id = self.frame_id
+            scan.angle_min = copy.copy(data.angle_min)
+            scan.angle_max = copy.copy(data.angle_max)
+            scan.angle_increment = copy.copy(data.angle_increment)
+            scan.range_min = 0.
+            scan.range_max = 30.
+            
+            #debug_msg.header.stamp= rospy.Time.now()
+            debug_ranges=np.zeros(len(data.ranges))
+            #debug_ranges[0:len(debug_ranges)]=0
+            debug_ranges[target_index] = limited_ranges[target_index]
+            scan.ranges= debug_ranges
+            #print(np.max(limited_ranges),target_index,limited_ranges[target_index])
+            #debug_msg.intensities = data.intensities
+            self.debug_publisher.publish(scan)
+
+
+            driving_angle=self.calculate_angle(target_index)
+
+            #threshold the angle we can turn as the maximum turn we can make is 35 degrees
+            thresholded_angle=self.threshold_angle(driving_angle)
+
+            #look at the data behind the car to make sure that if we are too close to the wall we don't turn
+            behind_car=np.asarray(data.ranges)
+            
+            #the lidar sweeps counterclockwise so right is [0:180] and left is [901:]
+            behind_car_right=behind_car[0:180]
+            behind_car_left=behind_car[901:]
+
+            #change the steering angle based on whether we are safe
+            thresholded_angle=self.adjust_turning_for_safety(behind_car_left,behind_car_right,thresholded_angle)
+            #velocity=self.calculate_min_turning_radius(thresholded_angle,limited_ranges[540])
+            #velocity=self.threshold_speed(velocity,new_ranges[target_index],new_ranges[540])
+
+
         
-        #go through the disparities and extend the disparities 
-        new_ranges=self.extend_disparities(limited_ranges,disparities,car_width)
-
-        #compute the max_value of the new limited values
-        max_value=max(new_ranges)
-        target_distances=np.where(new_ranges>=max_value)[0]
-        
-        #figure out which direction we should target based on the max distances we computed from disparities
-        driving_distance=self.calculate_target_distance(target_distances)
-        
-        driving_angle=self.calculate_angle(driving_distance)
-
-        #threshold the angle we can turn as the maximum turn we can make is 35 degrees
-        thresholded_angle=self.threshold_angle(driving_angle)
-
-        #look at the data behind the car to make sure that if we are too close to the wall we don't turn
-        behind_car=np.asarray(data.ranges)
-        
-        #the lidar sweeps counterclockwise so right is [0:180] and left is [901:]
-        behind_car_right=behind_car[0:180]
-        behind_car_left=behind_car[901:]
-
-        #change the steering angle based on whether we are safe
-        thresholded_angle=self.adjust_turning_for_safety(behind_car_left,behind_car_right,thresholded_angle)
-        velocity=self.calculate_min_turning_radius(thresholded_angle,limited_ranges[540])
-        velocity=self.threshold_speed(velocity,new_ranges[driving_distance],new_ranges[540])
-
-        """Yeah nah this aint working for us: velocity=self.duty_cycle_from_distance(limited_ranges[540])
-        print(velocity)"""
-        self.publish_speed_and_angle(thresholded_angle,velocity)
+            # specify the speed the car should move at 
+            self.publish_speed_and_angle(thresholded_angle,1.4)
 
 
     """Scale the speed in accordance to the forward distance"""
     def threshold_speed(self,velocity,forward_distance,straight_ahead_distance):
         max_distance=3.0
-
-        
         if straight_ahead_distance>self.absolute_max_distance:
             velocity=self.absolute_max_speed
         elif straight_ahead_distance>max_distance:
@@ -179,7 +193,6 @@ class DisparityExtenderDriving(object):
     def adjust_turning_for_safety(self,left_distances,right_distances,angle):
         min_left=min(left_distances)
         min_right=min(right_distances)
-
         if min_left<=self.turn_clearance and angle>0.0:#.261799:
             rospy.logwarn("Too Close Left: "+str(min_left))
             angle=0.0
@@ -215,8 +228,9 @@ class DisparityExtenderDriving(object):
     """Function that publishes the speed and angle so that the car drives around the track"""
     def publish_speed_and_angle(self,angle,speed):
         msg = AckermannDriveStamped()
+        msg.header.stamp=rospy.Time.now()
         msg.drive.steering_angle = angle
-        msg.drive.speed = 1.0 #right now I want constant speed
+        msg.drive.speed = speed
         self.pub_drive_param.publish(msg)
 
 
@@ -266,7 +280,7 @@ class DisparityExtenderDriving(object):
 
     """ Returns the number of points in the LIDAR scan that will cover half of
         the width of the car along an arc at the given distance. """
-    def calculate_samples_based_on_arc_length(self,distance,car_width):
+    def calculate_samples_based_on_arc_length(self,distance):
         
         # This isn't exact, because it's really calculated based on the arc length
         # when it should be calculated based on the straight-line distance.
@@ -276,10 +290,10 @@ class DisparityExtenderDriving(object):
          #store the value of 0.25 degrees in radians
         angle_step=(0.25)*(math.pi/180)
         arc_length=angle_step*distance
-        return int(math.ceil(car_width / arc_length))
+        return int(math.ceil(self.car_width/ arc_length))
 
     """Extend the disparities and don't go outside the specified region"""
-    def extend_disparities(self,arr,disparity_indices,car_width):
+    def extend_disparities(self,arr,disparity_indices):
         ranges=np.copy(arr)
         for i in disparity_indices:
             #get the values corresponding to the disparities
@@ -295,7 +309,7 @@ class DisparityExtenderDriving(object):
                 extend_positive=False
                 nearer_index=i+1
             #compute the number of samples needed to "extend the disparity"
-            samples_to_extend=self.calculate_samples_based_on_arc_length(nearer_value,car_width)
+            samples_to_extend=self.calculate_samples_based_on_arc_length(nearer_value)
             #print("Samples to Extend:",samples_to_extend)
 
             #loop through the array replacing indices that are larger and making sure not to go out of the specified regions   
@@ -321,7 +335,11 @@ class DisparityExtenderDriving(object):
         return ranges
 
 if __name__ == '__main__':
+    #get the arguments passed from the launch file
+    args = rospy.myargv()[1:]
+    scan_topic=args[0]
+    drive_topic=args[1]
+    frame_id = args[2]
     rospy.init_node('disparity_extender', anonymous=True)
-    extendObj=DisparityExtenderDriving()
-    rospy.Subscriber('scan', LaserScan, extendObj.lidar_callback)
+    extendObj=DisparityExtenderDriving(scan_topic,drive_topic,frame_id)
     rospy.spin()
