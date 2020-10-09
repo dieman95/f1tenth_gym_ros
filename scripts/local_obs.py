@@ -68,8 +68,8 @@ class local_obs:
 
         obs_intervals = self.obsZono_local(les_car) # vertices of rectangle obstacles
         map_obs_intervals = self.obsZono_gen(les,car_pos) # vertices of rectangle obstacles fixed coordinates (map)
-        print(len(obs_intervals))
-        print(len(map_obs_intervals))
+        # print(len(obs_intervals))
+        # print(len(map_obs_intervals))
 
         ########## 4) Combine data to creat markers  ###########################
         obs_MarkerArray = self.createMakers(les, car_pos)
