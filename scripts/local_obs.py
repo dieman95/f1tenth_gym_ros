@@ -61,14 +61,15 @@ class local_obs:
         x = car.position.x
         y = car.position.y
         car_pos = [x,y,roll,pitch,yaw]
-        print('Car driving at angle' + str(yaw))
+        print('Car driving at angle  ' + str(yaw))
 
 
         ########## 3) Create obstacles as boxes ###########################
 
         obs_intervals = self.obsZono_local(les_car) # vertices of rectangle obstacles
         map_obs_intervals = self.obsZono_gen(les,car_pos) # vertices of rectangle obstacles fixed coordinates (map)
-
+        print(len(obs_intervals))
+        print(len(map_obs_intervals))
 
         ########## 4) Combine data to creat markers  ###########################
         obs_MarkerArray = self.createMakers(les, car_pos)
@@ -133,7 +134,7 @@ class local_obs:
         for ii in range(nob):
             temp = obstacles[ii]
             pObs = [] # points to create straight line within obstacle (list of coordinates x-y)
-            tlp = np.arange(temp[0],temp[1],8)
+            tlp = np.arange(temp[0],temp[1],4)
             for i in tlp:
                 angle = -2.356 + i*0.25 # degrees
                 angRad = angle*math.pi/180
@@ -150,7 +151,7 @@ class local_obs:
         for ii in range(nob):
             temp = obstacles[ii]
             pObs = [] # points to create straight line within obstacle (list of coordinates x-y)
-            tlp = np.arange(temp[0],temp[1],8)
+            tlp = np.arange(temp[0],temp[1],4)
             for i in tlp:
                 angle = -2.356 + i*0.25 # degrees
                 angRad = angle*math.pi/180
