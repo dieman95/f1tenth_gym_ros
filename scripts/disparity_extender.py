@@ -43,22 +43,27 @@ class DisparityExtenderDriving(object):
 
         # This is the maximum steering angle of the car, in degrees.
 
-        self.max_turn_angle = 34.0
+        # self.max_turn_angle = 34.0
+        self.max_turn_angle = 10.0 #vegas
 
         # The slowest speed the car will go
         # Good value here is 0.1
 
-        self.min_speed = 0.37
+        # self.min_speed = 0.37
+        self.min_speed = 1.0 # vegas
 
         # The maximum speed the car will go (the absolute max for the motor is
         # 0.5, which is *very* fast). 0.15 is a good max for slow testing.
 
-        self.max_speed = 3.5 #.20
-        self.absolute_max_speed = 6.00 # 0.3
+        # self.max_speed = 3.5 #.20
+        self.max_speed = 2.00 # vegas
+        # self.absolute_max_speed = 6.00 # 0.3
+        self.absolute_max_speed = 4.00 # vegas
 
         # The forward distance at which the car will go its minimum speed.
         # If there's not enough clearance in front of the car it will stop.
         self.min_distance = 0.15
+        # self.min_distance = 0.5 # vegas
 
         # The forward distance over which the car will go its maximum speed.
         # Any distance between this and the minimum scales the speed linearly.
@@ -88,6 +93,9 @@ class DisparityExtenderDriving(object):
         #store the value of 0.25 degrees in radians
         self.angle_step=(0.25)*(math.pi/180)
 
+        #store previous angle
+        # self.prev_angle = 0
+        # self.max_angle_change = 0.0
         
         #Experimental Section
 
@@ -114,7 +122,7 @@ class DisparityExtenderDriving(object):
 
             #calculate the disparities between samples
             disparities=self.find_disparities(limited_ranges,self.disparity_threshold)
-            
+            # print(disparities)
             #go through the disparities and extend the disparities 
             new_ranges=self.extend_disparities(limited_ranges,disparities)
 
@@ -161,15 +169,29 @@ class DisparityExtenderDriving(object):
 
             #change the steering angle based on whether we are safe
             thresholded_angle=self.adjust_turning_for_safety(behind_car_left,behind_car_right,thresholded_angle)
-            #velocity=self.calculate_min_turning_radius(thresholded_angle,limited_ranges[540])
-            #velocity=self.threshold_speed(velocity,new_ranges[target_index],new_ranges[540])
+            velocity=self.calculate_min_turning_radius(thresholded_angle,limited_ranges[540])
+            velocity=self.threshold_speed(velocity,new_ranges[target_index],new_ranges[540])
 
+            # Compute max angle change (smooth drive)
+            # thresholded_angle = self.limit_angle_change(thresholded_angle)
+            # self.prev_angle = thresholded_angle
 
-        
             # specify the speed the car should move at 
-            self.publish_speed_and_angle(thresholded_angle,1.4)
+            self.publish_speed_and_angle(thresholded_angle,4)
+            # self.publish_speed_and_angle(thresholded_angle,velocity)
 
+    # ''' Limit the maximum change in angle between steps'''
+    # def limit_angle_change(self,angle):
+    #     ang_diff = angle-self.prev_angle
+    #     if abs(ang_diff) > self.max_angle_change:
+    #         if  ang_diff > 0:
+    #             return self.prev_angle+self.max_angle_change
+    #         else:
+    #             return self.prev_angle - self.max_angle_change
+    #     else:
+    #         return angle
 
+        # return angle
     """Scale the speed in accordance to the forward distance"""
     def threshold_speed(self,velocity,forward_distance,straight_ahead_distance):
         max_distance=3.0
@@ -243,7 +265,7 @@ class DisparityExtenderDriving(object):
 
     "Threshold the angle if it's larger than 35 degrees"
     def threshold_angle(self,angle):
-        max_angle_radians=35*(math.pi/180)
+        max_angle_radians=self.max_turn_angle*(math.pi/180)
         if angle<(-max_angle_radians):
             return -max_angle_radians
         elif angle>max_angle_radians:
@@ -290,11 +312,15 @@ class DisparityExtenderDriving(object):
          #store the value of 0.25 degrees in radians
         angle_step=(0.25)*(math.pi/180)
         arc_length=angle_step*distance
+        # print(distance)
+        # print(arc_length)
         return int(math.ceil(self.car_width/ arc_length))
 
     """Extend the disparities and don't go outside the specified region"""
     def extend_disparities(self,arr,disparity_indices):
         ranges=np.copy(arr)
+        # print(arr)
+        # print(disparity_indices)
         for i in disparity_indices:
             #get the values corresponding to the disparities
             value1=ranges[i]
@@ -309,6 +335,7 @@ class DisparityExtenderDriving(object):
                 extend_positive=False
                 nearer_index=i+1
             #compute the number of samples needed to "extend the disparity"
+            # print(nearer_value)
             samples_to_extend=self.calculate_samples_based_on_arc_length(nearer_value)
             #print("Samples to Extend:",samples_to_extend)
 

@@ -21,7 +21,10 @@ class pure_pursuit:
         self.waypoint_file = waypoint_file
 
         # pure pursuit parameters
-        self.LOOKAHEAD_DISTANCE = 1.50#1.70 # meters
+        # self.LOOKAHEAD_DISTANCE = 1.50#1.70 # meters
+        # self.LOOKAHEAD_DISTANCE = 2.05 # METERS (VEGAS) (try1)
+        self.LOOKAHEAD_DISTANCE = 1.70 # METERS (VEGAS) (try1)
+
         
         # Distance from the 
         self.distance_from_rear_wheel_to_front_wheel = 0.5
@@ -107,6 +110,7 @@ class pure_pursuit:
         dist_arr = np.linalg.norm(self.xy_points-curr_pos,axis=-1)
 
         ##finding those points which are less than the look ahead distance (will be behind and ahead of the vehicle)
+        # goal_arr = np.where((dist_arr > self.LOOKAHEAD_DISTANCE) & (dist_arr<self.LOOKAHEAD_DISTANCE+0.3))[0]
         goal_arr = np.where((dist_arr > self.LOOKAHEAD_DISTANCE) & (dist_arr<self.LOOKAHEAD_DISTANCE+0.3))[0]
         
         # finding the goal point which is within the goal points 
@@ -121,7 +125,8 @@ class pure_pursuit:
             v2 = [np.cos(yaw), np.sin(yaw)]
 
             angle= self.find_angle(v1,v2)
-            if angle < np.pi/2:
+            # if angle < np.pi/2:
+            if angle < np.pi/2.5:
                 pts_infrontofcar.append(pts[idx])
 
         pts_infrontofcar =np.asarray(pts_infrontofcar)
@@ -148,37 +153,50 @@ class pure_pursuit:
         # right now just keep going straight but it will need to be more elegant
         # TODO: make elegant
         else:
-            self.const_speed(2.0)
+            # self.const_speed(2.0)
+            self.const_speed(0.0)
    
     # USE THIS FUNCTION IF CHANGEABLE SPEED IS NEEDED
     def set_speed(self,angle):
         msg = AckermannDriveStamped()
         msg.header.stamp=rospy.Time.now()
-        msg.drive.steering_angle = angle
-        speed= 1.5
+        # msg.drive.steering_angle = angle
+        msg.drive.steering_angle = angle/1.9
+        # msg.drive.steering_angle = angle/1.8 (vegas - try1)
+        speed= 4.0
         angle = abs(angle)
         if(angle <0.01):
-            speed = 10.0#11.5
+            # speed = 10.0#11.5
+            speed = 18.0 #18.0 # vegas (try1)
         elif(angle<0.0336332):
-            speed = 9.0#11.1
+            # speed = 9.0#11.1
+            speed = 11.0 #11.0 #vegas (try1)
         elif(angle < 0.0872665):
-            speed = 7.0#7.6
+            # speed = 7.0#7.6
+            speed = 10.0 #10.0 #vegas (try1)
         elif(angle<0.1309):
-            speed = 6.5#6.5 
+            # speed = 6.5#6.5 
+            speed = 9.5 #9.5 #vegas (try1)
         elif(angle < 0.174533):
-            speed = 4.8#6.0
+            # speed = 4.8#6.0
+            speed = 9.0 #9.0 # vegas (try1)
         elif(angle < 0.261799):
-            speed = 4.6#5.5
+            # speed = 4.6#5.5
+            speed = 8.5 #8.5 #vegas (try1)
         elif(angle < 0.349066):
-            speed = 4.3#3.2
+            # speed = 4.3#3.2
+            speed = 8.0 #7.0 #vegas (try1)
         elif(angle < 0.436332):
-            speed = 4.0#5.1
+            # speed = 4.0#5.1
+            speed = 7.0 #7.0 #vegas (try1)
         else:
             print("more than 25 degrees",angle)
-            speed = 3.0
+            # speed = 3.0
+            speed = 7.0 #7.0 #vegas (try1)
         print(speed)
 
         msg.drive.speed = speed
+        # msg.drive.speed = 9.0
         self.pub.publish(msg)
 
         
@@ -189,7 +207,8 @@ class pure_pursuit:
         msg = AckermannDriveStamped()
         msg.header.stamp=rospy.Time.now()
         msg.drive.steering_angle = angle
-        msg.drive.speed = 1.5
+        # msg.drive.speed = 1.5
+        msg.drive.speed = 0
         self.pub.publish(msg)
 
     # find the angle bewtween two vectors    

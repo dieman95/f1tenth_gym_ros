@@ -29,7 +29,7 @@ if __name__=="__main__":
 
   settings = termios.tcgetattr(sys.stdin)
   rospy.init_node('keyboard', anonymous=True)
-
+  print('We have entered the keyboard')
   x = 0
   th = 0
   status = 0
