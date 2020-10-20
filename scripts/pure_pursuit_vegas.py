@@ -3,7 +3,6 @@ import rospy
 from ackermann_msgs.msg import AckermannDriveStamped
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point
-from f1tenth_gym_ros.msg import GoalPoint
 from visualization_msgs.msg import Marker
 from visualization_msgs.msg import MarkerArray
 import math
@@ -14,18 +13,17 @@ import csv
 import os
 import rospkg 
 
-class pure_pursuit:
+class pure_pursuit_vegas:
 
     def __init__(self,waypoint_file,drive_topic,odom_topic,debug_visualization=False):
 
         # initialize class fields 
         self.waypoint_file = waypoint_file
 
-        self.debug_visualization = debug_visualization
-
         # pure pursuit parameters
-        # self.LOOKAHEAD_DISTANCE = 1.5#1.70 # meters
+        # self.LOOKAHEAD_DISTANCE = 1.50#1.70 # meters
         self.LOOKAHEAD_DISTANCE = 1.70 # METERS (VEGAS) (try1)
+
         
         # Distance from the 
         self.distance_from_rear_wheel_to_front_wheel = 0.5
@@ -35,18 +33,16 @@ class pure_pursuit:
        
         # Publisher for 'drive_parameters' (speed and steering angle)
         self.pub = rospy.Publisher(drive_topic, AckermannDriveStamped, queue_size=1)
-        
         # Publisher for the goal point
-        if(self.debug_visualization):
-            self.goal_pub = rospy.Publisher('goal_point', MarkerArray, queue_size="1")
-            self.considered_pub= rospy.Publisher('/considered_points', MarkerArray, queue_size="1")
-            self.point_in_car_frame= rospy.Publisher('/goal_point_car_frame', MarkerArray, queue_size="1")
+        self.goal_pub = rospy.Publisher('/goal_point', MarkerArray, queue_size="1")
+        self.considered_pub= rospy.Publisher('/considered_points', MarkerArray, queue_size="1")
+        self.point_in_car_frame= rospy.Publisher('/goal_point_car_frame', MarkerArray, queue_size="1")
 
         # Publisher for the goal point
-        self.goal_xy=rospy.Publisher(odom_topic+'_goal_xy', GoalPoint, queue_size=1)
+        # self.goal_xy=rospy.Publisher(odom_topic+'_goal_xy', GoalPoint, queue_size=1)
 
         # Subscriber to vehicle position 
-        rospy.Subscriber(odom_topic, Odometry, self.callback, queue_size=10)
+        rospy.Subscriber(odom_topic, Odometry, self.callback, queue_size=100)
 
     # Import waypoints.csv into a list (path_points)
     def read_waypoints(self):
@@ -117,6 +113,7 @@ class pure_pursuit:
         dist_arr = np.linalg.norm(self.xy_points-curr_pos,axis=-1)
 
         ##finding those points which are less than the look ahead distance (will be behind and ahead of the vehicle)
+        # goal_arr = np.where((dist_arr > self.LOOKAHEAD_DISTANCE) & (dist_arr<self.LOOKAHEAD_DISTANCE+0.3))[0]
         goal_arr = np.where((dist_arr > self.LOOKAHEAD_DISTANCE) & (dist_arr<self.LOOKAHEAD_DISTANCE+0.3))[0]
         
         # finding the goal point which is within the goal points 
@@ -131,7 +128,8 @@ class pure_pursuit:
             v2 = [np.cos(yaw), np.sin(yaw)]
 
             angle= self.find_angle(v1,v2)
-            if angle < np.pi/2:
+            # if angle < np.pi/2:
+            if angle < np.pi/2.5:
                 pts_infrontofcar.append(pts[idx])
 
         pts_infrontofcar =np.asarray(pts_infrontofcar)
@@ -144,15 +142,7 @@ class pure_pursuit:
 
             # goal point 
             goal_point = pts_infrontofcar[idx]
-            gp = GoalPoint()
-            gp.header.stamp= rospy.Time.now()
-            gp.x = goal_point[0]
-            gp.y = goal_point[1]
-            self.goal_xy.publish(gp)
-
-
-            if(self.debug_visualization):
-                self.visualize_point([goal_point],self.goal_pub)
+            self.visualize_point([goal_point],self.goal_pub)
 
             # transform it into the vehicle coordinates
             v1 = (goal_point - curr_pos)[0].astype('double')
@@ -166,6 +156,7 @@ class pure_pursuit:
         # right now just keep going straight but it will need to be more elegant
         # TODO: make elegant
         else:
+            # self.const_speed(2.0)
             self.const_speed(0.0)
    
     # USE THIS FUNCTION IF CHANGEABLE SPEED IS NEEDED
@@ -173,42 +164,44 @@ class pure_pursuit:
         msg = AckermannDriveStamped()
         msg.header.stamp=rospy.Time.now()
         # msg.drive.steering_angle = angle
-        msg.drive.steering_angle = angle/1.9 # vegas
-        # speed= 1.5
-        speed = 4.0
+        msg.drive.steering_angle = angle/1.9
+        # msg.drive.steering_angle = angle/1.8 (vegas - try1)
+        speed= 4.0
         angle = abs(angle)
         if(angle <0.01):
-            # speed = 5.0#11.5
-            speed = 16.0 # vegas
+            # speed = 10.0#11.5
+            speed = 18.0 #18.0 # vegas (try1)
         elif(angle<0.0336332):
-            # speed = 4.5#11.1
-            speed = 10.0 # vegas
+            # speed = 9.0#11.1
+            speed = 11.0 #11.0 #vegas (try1)
         elif(angle < 0.0872665):
-            # speed = 3.5#7.6
-            speed = 9.0 #vegas
+            # speed = 7.0#7.6
+            speed = 10.0 #10.0 #vegas (try1)
         elif(angle<0.1309):
-            # speed = 3.25#6.5 
-            speed = 8.5 #vegas
+            # speed = 6.5#6.5 
+            speed = 9.5 #9.5 #vegas (try1)
         elif(angle < 0.174533):
-            # speed = 2.4#6.0
-            speed = 8.0 # vegas
+            # speed = 4.8#6.0
+            speed = 9.0 #9.0 # vegas (try1)
         elif(angle < 0.261799):
-            # speed = 2.3#5.5
-            speed = 7.5 # vegas
+            # speed = 4.6#5.5
+            speed = 8.5 #8.5 #vegas (try1)
         elif(angle < 0.349066):
-            # speed = 2.15#3.2
-            speed = 6.5 # vegas
+            # speed = 4.3#3.2
+            speed = 8.0 #7.0 #vegas (try1)
         elif(angle < 0.436332):
-            # speed = 2.0#5.1
-            speed = 6.0 # vegas
+            # speed = 4.0#5.1
+            speed = 7.0 #7.0 #vegas (try1)
         else:
             print("more than 25 degrees",angle)
-            # speed = 1.5
-            speed = 5.5
+            # speed = 3.0
+            speed = 7.0 #7.0 #vegas (try1)
         print(speed)
 
         msg.drive.speed = speed
+        # msg.drive.speed = 9.0
         self.pub.publish(msg)
+
         
 
 
@@ -217,7 +210,8 @@ class pure_pursuit:
         msg = AckermannDriveStamped()
         msg.header.stamp=rospy.Time.now()
         msg.drive.steering_angle = angle
-        msg.drive.speed = 1.5
+        # msg.drive.speed = 1.5
+        msg.drive.speed = 0
         self.pub.publish(msg)
 
     # find the angle bewtween two vectors    
@@ -233,12 +227,10 @@ if __name__ == '__main__':
     args = rospy.myargv()[1:]
     # get the racecar name so we know what to subscribe to
     # get the path to the file containing the waypoints
-
     waypoint_file=args[0]
     drive_topic=args[1]
     odom_topic=args[2]
-
-    C = pure_pursuit(waypoint_file,drive_topic,odom_topic)  
+    C = pure_pursuit_vegas(waypoint_file,drive_topic, odom_topic)  
     r = rospy.Rate(40)
 
     while not rospy.is_shutdown():

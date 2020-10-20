@@ -57,15 +57,17 @@ class Hybrid_Pure_Pursuit:
         pure_pursuit_msg.header.stamp=rospy.Time.now()
 
         self.visualize_point(gp_pt,self.goal_pub)
-
-        #rospy.loginfo("distance: "+str(distance))
-        if(distance< self.switch_distance_threshold and distance2 < 1.5):
+        # rospy.loginfo("distance: "+str(distance))
+        # if(distance< self.switch_distance_threshold and distance2 < 1.5):
+        if(distance< self.switch_distance_threshold or distance2 < 1.5):
 
             disparity_msg.drive.speed = self.set_speed(disparity_msg.drive.steering_angle,odom.twist.twist.linear.x,pure_pursuit_msg.drive.speed)
             
-
+            rospy.logwarn('Using disparity extender commands')
+            rospy.logwarn('Avoiding obstacles at '+str(disparity_msg.drive.speed)+' m/s')
             self.drive_publisher.publish(disparity_msg)
         else:
+            print(pure_pursuit_msg.drive.speed)
             self.drive_publisher.publish(pure_pursuit_msg)
 
 

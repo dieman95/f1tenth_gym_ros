@@ -49,8 +49,8 @@ RUN pip install numpy==1.16.0 \
 RUN apt-get install -y ros-melodic-message-filters
 
 
-# RUN git clone https://github.com/f1tenth/f1tenth_gym
-RUN mkdir /f1tenth_gym
+RUN git clone https://github.com/f1tenth/f1tenth_gym
+# RUN mkdir /f1tenth_gym
 COPY ./f1tenth_gym /f1tenth_gym
 
 RUN cd f1tenth_gym && \
